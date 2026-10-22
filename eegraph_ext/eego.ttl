@@ -1,0 +1,707 @@
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix sosa:    <http://www.w3.org/ns/sosa/> .
+@prefix time:    <http://www.w3.org/2006/time#> .
+@prefix eego:    <http://eegraph.org/ontology#> .
+
+# ── Ontology declaration ──────────────────────────────────────────────────────
+
+<http://eegraph.org/ontology>
+    a owl:Ontology ;
+    rdfs:label "EEGraph EEG Ontology (eego)"^^xsd:string ;
+    dcterms:description "Application ontology for the EEGraph Knowledge Graph. Defines classes and named individuals for EEG connectivity modelling, including electrode positions for the international 10/20 and 10/10 systems. Electrode position terms are introduced here because no currently published OWL ontology provides stable, dereferenceable URIs for individual scalp electrode positions."^^xsd:string ;
+    dcterms:creator "Alberto Nogales"^^xsd:string ;
+    owl:versionInfo "1.0.0"^^xsd:string .
+
+# ── Classes ───────────────────────────────────────────────────────────────────
+
+eego:Electrode
+    a owl:Class ;
+    rdfs:subClassOf sosa:Sensor ;
+    rdfs:label "EEG electrode"^^xsd:string ;
+    rdfs:comment "A scalp electrode used for electroencephalographic recording."^^xsd:string .
+
+eego:BipolarChannel
+    a owl:Class ;
+    rdfs:subClassOf sosa:Sensor ;
+    rdfs:label "Bipolar EEG channel"^^xsd:string ;
+    rdfs:comment "A differential EEG channel defined by a positive and a negative electrode pole."^^xsd:string .
+
+eego:ConnectivityEdge
+    a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "EEG connectivity edge"^^xsd:string ;
+    rdfs:comment "A weighted edge representing the functional connectivity between two EEG channels within a time window. May be directed (DTF) or undirected depending on the measure."^^xsd:string .
+
+eego:ConnectivityMeasure
+    a owl:Class ;
+    rdfs:label "EEG connectivity measure"^^xsd:string ;
+    rdfs:comment "A named method for quantifying functional connectivity between EEG channels."^^xsd:string .
+
+eego:NodeMeasurement
+    a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "EEG node measurement"^^xsd:string ;
+    rdfs:comment "A per-channel measurement value for a single-channel connectivity measure (e.g. power spectrum, spectral entropy) within a time window."^^xsd:string .
+
+eego:TimeWindow
+    a owl:Class ;
+    rdfs:subClassOf time:Interval ;
+    rdfs:label "EEG time window"^^xsd:string ;
+    rdfs:comment "A fixed-duration segment of an EEG recording over which connectivity is computed."^^xsd:string .
+
+# ── Object properties ─────────────────────────────────────────────────────────
+
+eego:positivePole
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label  "positive pole"^^xsd:string ;
+    rdfs:domain eego:BipolarChannel ;
+    rdfs:range  eego:Electrode ;
+    rdfs:comment "The positive electrode pole of a bipolar channel. Exact cardinality 1."^^xsd:string .
+
+eego:negativePole
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label  "negative pole"^^xsd:string ;
+    rdfs:domain eego:BipolarChannel ;
+    rdfs:range  eego:Electrode ;
+    rdfs:comment "The negative electrode pole of a bipolar channel. Exact cardinality 1."^^xsd:string .
+
+eego:sourceElectrode
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label  "source electrode"^^xsd:string ;
+    rdfs:domain eego:ConnectivityEdge ;
+    rdfs:range  sosa:Sensor ;
+    rdfs:comment "The first endpoint of a connectivity edge. Range is sosa:Sensor to accommodate both monopolar and bipolar montages."^^xsd:string .
+
+eego:targetElectrode
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label  "target electrode"^^xsd:string ;
+    rdfs:domain eego:ConnectivityEdge ;
+    rdfs:range  sosa:Sensor ;
+    rdfs:comment "The second endpoint of a connectivity edge. Range is sosa:Sensor to accommodate both monopolar and bipolar montages."^^xsd:string .
+
+eego:inWindow
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label  "in window"^^xsd:string ;
+    rdfs:domain eego:ConnectivityEdge ;
+    rdfs:range  eego:TimeWindow ;
+    rdfs:comment "Links a connectivity edge to the time window in which it was computed. Exact cardinality 1."^^xsd:string .
+
+eego:connectedTo
+    a owl:ObjectProperty, owl:SymmetricProperty, owl:IrreflexiveProperty ;
+    rdfs:label  "connected to"^^xsd:string ;
+    rdfs:domain sosa:Sensor ;
+    rdfs:range  sosa:Sensor ;
+    rdfs:comment "Undirected functional connectivity relationship between two sensor nodes. Used for symmetric and antisymmetric measures; irreflexive because no electrode is connected to itself."^^xsd:string .
+
+eego:directedConnection
+    a owl:ObjectProperty, owl:IrreflexiveProperty ;
+    rdfs:label  "directed connection"^^xsd:string ;
+    rdfs:domain sosa:Sensor ;
+    rdfs:range  sosa:Sensor ;
+    rdfs:comment "Directed functional connectivity relationship from a source sensor to a target sensor. Used for directed measures such as DTF."^^xsd:string .
+
+eego:measure
+    a owl:ObjectProperty ;
+    rdfs:label  "measure"^^xsd:string ;
+    rdfs:range  eego:ConnectivityMeasure ;
+    rdfs:comment "Links a node measurement to the connectivity measure used to compute it."^^xsd:string .
+
+eego:ofSensor
+    a owl:ObjectProperty ;
+    rdfs:label  "of sensor"^^xsd:string ;
+    rdfs:range  sosa:Sensor ;
+    rdfs:comment "Links a node measurement to the sensor (electrode or bipolar channel) it was computed for."^^xsd:string .
+
+eego:derivedFrom
+    a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:subPropertyOf prov:wasDerivedFrom ;
+    rdfs:label  "derived from"^^xsd:string ;
+    rdfs:domain eego:ConnectivityEdge ;
+    rdfs:range  sosa:ObservationCollection ;
+    rdfs:comment "Links a connectivity edge to the source EEG recording it was derived from."^^xsd:string .
+
+# ── Datatype properties ───────────────────────────────────────────────────────
+
+eego:weight
+    a owl:DatatypeProperty ;
+    rdfs:label  "connectivity weight"^^xsd:string ;
+    rdfs:domain eego:ConnectivityEdge ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Numeric connectivity weight. Value bounds depend on the measure; see eego:minValue and eego:maxValue on the ConnectivityMeasure individual. Exact cardinality 1 per ConnectivityEdge."^^xsd:string .
+
+eego:value
+    a owl:DatatypeProperty ;
+    rdfs:label  "measurement value"^^xsd:string ;
+    rdfs:domain eego:NodeMeasurement ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Numeric value of a per-channel measurement."^^xsd:string .
+
+eego:inTopFraction
+    a owl:DatatypeProperty ;
+    rdfs:label  "in top fraction"^^xsd:string ;
+    rdfs:domain eego:NodeMeasurement ;
+    rdfs:range  xsd:boolean ;
+    rdfs:comment "True if the channel's measurement value placed it in EEGraph's top-fraction selection for this window."^^xsd:string .
+
+eego:connectivityMeasure
+    a owl:ObjectProperty ;
+    rdfs:label  "connectivity measure"^^xsd:string ;
+    rdfs:range  eego:ConnectivityMeasure ;
+    rdfs:comment "Links a connectivity edge or computation activity to the ConnectivityMeasure individual describing the method used."^^xsd:string .
+
+eego:threshold
+    a owl:DatatypeProperty ;
+    rdfs:label  "threshold"^^xsd:string ;
+    rdfs:domain [ a owl:Class ; owl:unionOf ( prov:Activity eego:ConnectivityMeasure ) ] ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "On prov:Activity: the effective edge inclusion threshold applied during connectivity graph construction (exact cardinality 1). On eego:ConnectivityMeasure: the reference threshold for that measure, used when no explicit threshold is supplied by the user."^^xsd:string .
+
+eego:thresholdRule
+    a owl:ObjectProperty ;
+    rdfs:label  "threshold rule"^^xsd:string ;
+    rdfs:domain prov:Activity ;
+    rdfs:range  eego:ThresholdRule ;
+    rdfs:comment "Links a computation activity to the SKOS concept describing how the threshold was applied."^^xsd:string .
+
+eego:nanPairCount
+    a owl:DatatypeProperty ;
+    rdfs:label  "NaN pair count"^^xsd:string ;
+    rdfs:domain eego:TimeWindow ;
+    rdfs:range  xsd:integer ;
+    rdfs:comment "Number of channel pairs for which the connectivity measure returned NaN in this window. Absent when zero."^^xsd:string .
+
+eego:scope
+    a owl:ObjectProperty ;
+    rdfs:label  "measure scope"^^xsd:string ;
+    rdfs:domain eego:ConnectivityMeasure ;
+    rdfs:range  eego:MeasureScope ;
+    rdfs:comment "Links a connectivity measure to its scope: Pairwise or SingleChannel."^^xsd:string .
+
+eego:symmetry
+    a owl:ObjectProperty ;
+    rdfs:label  "measure symmetry"^^xsd:string ;
+    rdfs:domain eego:ConnectivityMeasure ;
+    rdfs:range  eego:MeasureSymmetry ;
+    rdfs:comment "Links a connectivity measure to its symmetry class: Symmetric, Asymmetric, Antisymmetric, or Directed."^^xsd:string .
+
+eego:bandResolved
+    a owl:DatatypeProperty ;
+    rdfs:label  "band resolved"^^xsd:string ;
+    rdfs:domain eego:ConnectivityMeasure ;
+    rdfs:range  xsd:boolean ;
+    rdfs:comment "True if the measure is computed per frequency band."^^xsd:string .
+
+eego:minValue
+    a owl:DatatypeProperty ;
+    rdfs:label  "minimum value"^^xsd:string ;
+    rdfs:domain eego:ConnectivityMeasure ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Theoretical minimum of the connectivity measure's output range."^^xsd:string .
+
+eego:maxValue
+    a owl:DatatypeProperty ;
+    rdfs:label  "maximum value"^^xsd:string ;
+    rdfs:domain eego:ConnectivityMeasure ;
+    rdfs:range  xsd:decimal ;
+    rdfs:comment "Theoretical maximum of the connectivity measure's output range. Absent for unbounded measures."^^xsd:string .
+
+eego:frequencyBand
+    a owl:DatatypeProperty ;
+    rdfs:label  "frequency band"^^xsd:string ;
+    rdfs:range  xsd:string ;
+    rdfs:comment "EEG frequency band label (e.g. 'alpha', 'beta'). Absent for broadband analyses. Applicable to ConnectivityEdge and TimeWindow."^^xsd:string .
+
+eego:scalp2DX
+    a owl:DatatypeProperty ;
+    rdfs:label  "scalp 2-D x coordinate"^^xsd:string ;
+    rdfs:domain eego:Electrode ;
+    rdfs:range  xsd:float ;
+    rdfs:comment "Normalised 2-D scalp x coordinate in [-1, 1]. Defined only for standard 10/20 and 10/10 positions."^^xsd:string .
+
+eego:scalp2DY
+    a owl:DatatypeProperty ;
+    rdfs:label  "scalp 2-D y coordinate"^^xsd:string ;
+    rdfs:domain eego:Electrode ;
+    rdfs:range  xsd:float ;
+    rdfs:comment "Normalised 2-D scalp y coordinate in [-1, 1]. Defined only for standard 10/20 and 10/10 positions."^^xsd:string .
+
+# ── MeasureScope SKOS scheme ─────────────────────────────────────────────────
+
+eego:MeasureScopeScheme
+    a skos:ConceptScheme ;
+    rdfs:label "EEG measure scope scheme"^^xsd:string ;
+    skos:prefLabel "Measure Scope"@en .
+
+eego:MeasureScope
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Measure scope"^^xsd:string .
+
+eego:Pairwise
+    a owl:NamedIndividual, eego:MeasureScope ;
+    skos:inScheme eego:MeasureScopeScheme ;
+    skos:prefLabel "Pairwise"@en ;
+    skos:notation "Pairwise"^^xsd:string ;
+    skos:definition "The measure operates on a pair of channels and produces one value per pair."@en .
+
+eego:SingleChannel
+    a owl:NamedIndividual, eego:MeasureScope ;
+    skos:inScheme eego:MeasureScopeScheme ;
+    skos:prefLabel "Single channel"@en ;
+    skos:notation "SingleChannel"^^xsd:string ;
+    skos:definition "The measure operates on a single channel and produces one value per channel."@en .
+
+# ── MeasureSymmetry SKOS scheme ───────────────────────────────────────────────
+
+eego:MeasureSymmetryScheme
+    a skos:ConceptScheme ;
+    rdfs:label "EEG measure symmetry scheme"^^xsd:string ;
+    skos:prefLabel "Measure Symmetry"@en .
+
+eego:MeasureSymmetry
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Measure symmetry"^^xsd:string .
+
+eego:Symmetric
+    a owl:NamedIndividual, eego:MeasureSymmetry ;
+    skos:inScheme eego:MeasureSymmetryScheme ;
+    skos:prefLabel "Symmetric"@en ;
+    skos:notation "Symmetric"^^xsd:string ;
+    skos:definition "M(A,B) = M(B,A); the connectivity relationship is undirected."@en .
+
+eego:Asymmetric
+    a owl:NamedIndividual, eego:MeasureSymmetry ;
+    skos:inScheme eego:MeasureSymmetryScheme ;
+    skos:prefLabel "Asymmetric"@en ;
+    skos:notation "Asymmetric"^^xsd:string ;
+    skos:definition "M(A,B) ≠ M(B,A) in general; direction affects the value but is not a causal claim."@en .
+
+eego:Antisymmetric
+    a owl:NamedIndividual, eego:MeasureSymmetry ;
+    skos:inScheme eego:MeasureSymmetryScheme ;
+    skos:prefLabel "Antisymmetric"@en ;
+    skos:notation "Antisymmetric"^^xsd:string ;
+    skos:definition "M(A,B) = −M(B,A); the value changes sign when source and target are swapped."@en .
+
+eego:Directed
+    a owl:NamedIndividual, eego:MeasureSymmetry ;
+    skos:inScheme eego:MeasureSymmetryScheme ;
+    skos:prefLabel "Directed"@en ;
+    skos:notation "Directed"^^xsd:string ;
+    skos:definition "The measure encodes a causal or flow direction from source to target; eego:directedConnection is used instead of eego:connectedTo."@en .
+
+# ── ThresholdRule SKOS scheme ─────────────────────────────────────────────────
+
+eego:ThresholdRuleScheme
+    a skos:ConceptScheme ;
+    rdfs:label "EEG threshold rule scheme"^^xsd:string ;
+    skos:prefLabel "Threshold Rule"@en .
+
+eego:ThresholdRule
+    a owl:Class ;
+    rdfs:subClassOf skos:Concept ;
+    rdfs:label "Threshold rule"^^xsd:string .
+
+eego:ValueAbove
+    a owl:NamedIndividual, eego:ThresholdRule ;
+    skos:inScheme eego:ThresholdRuleScheme ;
+    skos:prefLabel "Value above"@en ;
+    skos:notation "ValueAbove"^^xsd:string ;
+    skos:definition "Edge kept if value > threshold; signed comparison."@en .
+
+eego:MagnitudeAboveUndirected
+    a owl:NamedIndividual, eego:ThresholdRule ;
+    skos:inScheme eego:ThresholdRuleScheme ;
+    skos:prefLabel "Magnitude above (undirected)"@en ;
+    skos:notation "MagnitudeAboveUndirected"^^xsd:string ;
+    skos:definition "Edge kept if |value| > threshold; stored undirected, direction discarded."@en .
+
+eego:TopFraction
+    a owl:NamedIndividual, eego:ThresholdRule ;
+    skos:inScheme eego:ThresholdRuleScheme ;
+    skos:prefLabel "Top fraction"@en ;
+    skos:notation "TopFraction"^^xsd:string ;
+    skos:definition "Channels in the top fraction of values are selected."@en .
+
+# ── Frequency band SKOS scheme ───────────────────────────────────────────────
+
+eego:FrequencyBandScheme
+    a skos:ConceptScheme ;
+    rdfs:label "EEG frequency band scheme"^^xsd:string ;
+    skos:prefLabel "EEG Frequency Bands"@en .
+
+eego:Delta
+    a owl:NamedIndividual, skos:Concept ;
+    skos:inScheme eego:FrequencyBandScheme ;
+    skos:prefLabel "delta"@en ;
+    skos:notation "delta"^^xsd:string .
+
+eego:Theta
+    a owl:NamedIndividual, skos:Concept ;
+    skos:inScheme eego:FrequencyBandScheme ;
+    skos:prefLabel "theta"@en ;
+    skos:notation "theta"^^xsd:string .
+
+eego:Alpha
+    a owl:NamedIndividual, skos:Concept ;
+    skos:inScheme eego:FrequencyBandScheme ;
+    skos:prefLabel "alpha"@en ;
+    skos:notation "alpha"^^xsd:string .
+
+eego:Beta
+    a owl:NamedIndividual, skos:Concept ;
+    skos:inScheme eego:FrequencyBandScheme ;
+    skos:prefLabel "beta"@en ;
+    skos:notation "beta"^^xsd:string .
+
+eego:Gamma
+    a owl:NamedIndividual, skos:Concept ;
+    skos:inScheme eego:FrequencyBandScheme ;
+    skos:prefLabel "gamma"@en ;
+    skos:notation "gamma"^^xsd:string .
+
+# ── Connectivity measure individuals ─────────────────────────────────────────
+
+eego:PearsonCorrelation
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Pearson correlation"@en ;
+    skos:notation "pearson_correlation"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Symmetric ;
+    eego:bandResolved false ;
+    eego:minValue "-1.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.7"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:CrossCorrelation
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Cross-correlation"@en ;
+    skos:notation "cross_correlation"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Asymmetric ;
+    eego:bandResolved false ;
+    eego:minValue "-1.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.5"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:CorrectedCrossCorrelation
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Corrected cross-correlation"@en ;
+    skos:notation "corr_cross_correlation"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Antisymmetric ;
+    eego:bandResolved false ;
+    eego:minValue "-2.0"^^xsd:decimal ;
+    eego:maxValue "2.0"^^xsd:decimal ;
+    eego:threshold "0.1"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:SquaredCoherence
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Squared coherence"@en ;
+    skos:notation "squared_coherence"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Symmetric ;
+    eego:bandResolved true ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.65"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:ImaginaryCoherence
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Imaginary coherence"@en ;
+    skos:notation "imag_coherence"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Antisymmetric ;
+    eego:bandResolved true ;
+    eego:minValue "-1.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.4"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:WPLI
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Weighted phase lag index"@en ;
+    skos:notation "wpli"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Symmetric ;
+    eego:bandResolved true ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.45"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:PLV
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Phase locking value"@en ;
+    skos:notation "plv"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Symmetric ;
+    eego:bandResolved true ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.8"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:PLI
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Phase lag index"@en ;
+    skos:notation "pli"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Symmetric ;
+    eego:bandResolved false ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.1"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:PLIBands
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Phase lag index (band-resolved)"@en ;
+    skos:notation "pli_bands"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Symmetric ;
+    eego:bandResolved true ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.1"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:DTF
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Directed transfer function"@en ;
+    skos:notation "dtf"^^xsd:string ;
+    eego:scope eego:Pairwise ;
+    eego:symmetry eego:Directed ;
+    eego:bandResolved true ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.3"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:PowerSpectrum
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Power spectrum"@en ;
+    skos:notation "power_spectrum"^^xsd:string ;
+    eego:scope eego:SingleChannel ;
+    eego:bandResolved true ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:threshold "0.25"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:SpectralEntropy
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Spectral entropy"@en ;
+    skos:notation "spectral_entropy"^^xsd:string ;
+    eego:scope eego:SingleChannel ;
+    eego:bandResolved true ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:maxValue "1.0"^^xsd:decimal ;
+    eego:threshold "0.25"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+eego:ShannonEntropy
+    a owl:NamedIndividual, eego:ConnectivityMeasure ;
+    skos:prefLabel "Shannon entropy"@en ;
+    skos:notation "shannon_entropy"^^xsd:string ;
+    eego:scope eego:SingleChannel ;
+    eego:bandResolved false ;
+    eego:minValue "0.0"^^xsd:decimal ;
+    eego:threshold "0.25"^^xsd:decimal .
+    # TODO: skos:closeMatch to STATO/OBI term
+
+# ── 10/20 electrode positions ─────────────────────────────────────────────────
+# Source: IEC 60601-2-26:2012 — Medical electrical equipment, Part 2-26:
+#         Particular requirements for the basic safety and essential performance
+#         of electroencephalographs.
+# Labels follow the modern 10/10-compatible naming convention (T7/T8 for the
+# former T3/T4; P7/P8 for the former T5/T6) as adopted in the IFCN 1994
+# guidelines and BIDS EEG specification.
+
+eego:Electrode_FP1
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "FP1"^^xsd:string ;
+    skos:notation "Fp1"^^xsd:string ;
+    skos:note     "International 10/20 system — left prefrontal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_FP2
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "FP2"^^xsd:string ;
+    skos:notation "Fp2"^^xsd:string ;
+    skos:note     "International 10/20 system — right prefrontal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_F7
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "F7"^^xsd:string ;
+    skos:notation "F7"^^xsd:string ;
+    skos:note     "International 10/20 system — left inferior frontal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_F3
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "F3"^^xsd:string ;
+    skos:notation "F3"^^xsd:string ;
+    skos:note     "International 10/20 system — left frontal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_FZ
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "FZ"^^xsd:string ;
+    skos:notation "Fz"^^xsd:string ;
+    skos:note     "International 10/20 system — midline frontal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_F4
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "F4"^^xsd:string ;
+    skos:notation "F4"^^xsd:string ;
+    skos:note     "International 10/20 system — right frontal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_F8
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "F8"^^xsd:string ;
+    skos:notation "F8"^^xsd:string ;
+    skos:note     "International 10/20 system — right inferior frontal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_T7
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "T7"^^xsd:string ;
+    skos:notation "T7"^^xsd:string ;
+    skos:altLabel "T3"^^xsd:string ;
+    skos:note     "International 10/20 system — left temporal (formerly T3 in pre-1994 nomenclature)."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_C3
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "C3"^^xsd:string ;
+    skos:notation "C3"^^xsd:string ;
+    skos:note     "International 10/20 system — left central."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_CZ
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "CZ"^^xsd:string ;
+    skos:notation "Cz"^^xsd:string ;
+    skos:note     "International 10/20 system — midline central (vertex)."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_C4
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "C4"^^xsd:string ;
+    skos:notation "C4"^^xsd:string ;
+    skos:note     "International 10/20 system — right central."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_T8
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "T8"^^xsd:string ;
+    skos:notation "T8"^^xsd:string ;
+    skos:altLabel "T4"^^xsd:string ;
+    skos:note     "International 10/20 system — right temporal (formerly T4 in pre-1994 nomenclature)."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_P7
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "P7"^^xsd:string ;
+    skos:notation "P7"^^xsd:string ;
+    skos:altLabel "T5"^^xsd:string ;
+    skos:note     "International 10/20 system — left posterior temporal (formerly T5 in pre-1994 nomenclature)."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_P3
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "P3"^^xsd:string ;
+    skos:notation "P3"^^xsd:string ;
+    skos:note     "International 10/20 system — left parietal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_PZ
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "PZ"^^xsd:string ;
+    skos:notation "Pz"^^xsd:string ;
+    skos:note     "International 10/20 system — midline parietal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_P4
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "P4"^^xsd:string ;
+    skos:notation "P4"^^xsd:string ;
+    skos:note     "International 10/20 system — right parietal."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_P8
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "P8"^^xsd:string ;
+    skos:notation "P8"^^xsd:string ;
+    skos:altLabel "T6"^^xsd:string ;
+    skos:note     "International 10/20 system — right posterior temporal (formerly T6 in pre-1994 nomenclature)."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_O1
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "O1"^^xsd:string ;
+    skos:notation "O1"^^xsd:string ;
+    skos:note     "International 10/20 system — left occipital."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_OZ
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "OZ"^^xsd:string ;
+    skos:notation "Oz"^^xsd:string ;
+    skos:note     "International 10/20 system — midline occipital."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+eego:Electrode_O2
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "O2"^^xsd:string ;
+    skos:notation "O2"^^xsd:string ;
+    skos:note     "International 10/20 system — right occipital."^^xsd:string ;
+    dcterms:source <https://www.iec.ch/publication/5708> .
+
+# ── 10/10 extension positions ─────────────────────────────────────────────────
+# Source: Oostenveld R, Praamstra P. The five percent electrode system for
+#         high-resolution EEG and ERP measurements. Clin Neurophysiol. 2001;
+#         112(4):713-719. doi:10.1016/S1388-2457(00)00527-7
+# These four positions are used in the EEGMMIDB dataset (64-channel montage).
+
+eego:Electrode_AF3
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "AF3"^^xsd:string ;
+    skos:notation "AF3"^^xsd:string ;
+    skos:note     "International 10/10 system — left antero-frontal."^^xsd:string ;
+    dcterms:source <https://doi.org/10.1016/S1388-2457(00)00527-7> .
+
+eego:Electrode_AF4
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "AF4"^^xsd:string ;
+    skos:notation "AF4"^^xsd:string ;
+    skos:note     "International 10/10 system — right antero-frontal."^^xsd:string ;
+    dcterms:source <https://doi.org/10.1016/S1388-2457(00)00527-7> .
+
+eego:Electrode_FC5
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "FC5"^^xsd:string ;
+    skos:notation "FC5"^^xsd:string ;
+    skos:note     "International 10/10 system — left fronto-central."^^xsd:string ;
+    dcterms:source <https://doi.org/10.1016/S1388-2457(00)00527-7> .
+
+eego:Electrode_FC6
+    a owl:NamedIndividual, eego:Electrode ;
+    rdfs:label    "FC6"^^xsd:string ;
+    skos:notation "FC6"^^xsd:string ;
+    skos:note     "International 10/10 system — right fronto-central."^^xsd:string ;
+    dcterms:source <https://doi.org/10.1016/S1388-2457(00)00527-7> .
